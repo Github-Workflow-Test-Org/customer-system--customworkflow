@@ -1,6 +1,6 @@
 veracode_static_scan:
   use_custom_workflow: customer-build
-  artifact_file: ./veracode-artifact/veracode-artifact.zip
+  artifact_file: veracode-artifact
   profile: build
   push:
     trigger: true
