@@ -3,7 +3,7 @@ se
 A comprehensive sample application demonstrating SQL Server T-SQL stored procedures, functions, and triggers integrated with a C# .NET Core ASP.NET Core application. This system includes intentional security vulnerabilities for testing security scanners.
 
 ## Quick Start
-
+d
 ### Prerequisitess
 
 - **SQL Server**: 2019 or later (2022 recommended)
