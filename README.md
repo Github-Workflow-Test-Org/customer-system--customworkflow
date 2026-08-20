@@ -7,7 +7,7 @@ d
 ### Prerequisitess
 
 - **SQL Server**: 2019 or later (2022 recommended)
-- **.NET**: 8.0 SDK or later
+- **.NET**: 8.0 SDK or laterd
 - **Visual Studio**: 2022 or Visual Studio Code with C# extension (optional)d
 - **SQL Server Management Studio (SSMS)**: For database management (optional)
 - **Git**: For cloning and version control
