@@ -1,0 +1,78 @@
+name: Veracode Build Artifact
+
+run-name: Veracode Build Artifact
+
+on:
+  repository_dispatch:
+    types: [customer-build]
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    name: register
+    steps:
+      - name: Register build
+        id: register-build
+        uses: veracode/github-actions-integration-helper@main
+        with:
+          action: registerBuild
+          token: ${{ github.event.client_payload.token }}
+          appname: ${{ github.event.client_payload.user_config.profile_name }}
+          source_repository: ${{ github.event.client_payload.repository.full_name }}
+          check_run_id: ${{ github.run_id }}
+          check_run_name: ${{ github.workflow }}
+          head_sha: ${{ github.event.client_payload.sha }}
+          event_type: ${{ github.event.client_payload.event_type }}
+          branch: ${{ github.event.client_payload.user_config.sandbox_scan.branch }}
+          issue_trigger_flow: ${{ github.event.client_payload.user_config.issue_trigger_flow }}
+
+  build:
+    needs: register
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ github.event.client_payload.repository.full_name }}
+        ref: ${{ github.event.client_payload.sha }}
+        token: ${{ github.event.client_payload.token }}
+        path: 'source-code'
+
+    - uses: actions/checkout@v4
+      with:
+        path: 'vulnado-custom-workflow-helper'
+        
+    - uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: oracle
+        
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        
+    - name: Package the appliccation
+      id: application_package
+      env:
+        VERACODE_API_KEY_ID: '${{ secrets.VERACODE_API_ID }}'
+        VERACODE_API_KEY_SECRET: '${{ secrets.VERACODE_API_KEY }}'
+      run: |
+        pwd
+        ls -la
+        working_path=`pwd`
+        echo "working_dir=$working_path" >> "$GITHUB_OUTPUT"
+        cd vulnado-custom-workflow-helper/helper/cli
+        cliFile=$(ls -1 . | head -n 1)
+        cliFileName=$(echo "$cliFile" | cut -c 1-$((${#cliFile}-7)))
+        tar -zxvf $cliFile
+        cd $cliFileName
+        export PATH="vulnado-custom-workflow-helper/helper/cli/$cliFileName:$PATH"
+        cd $working_path
+        veracode package --source source-code --output veracode-artifacts --trust
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: veracode-artifact
+        path: "${{ steps.application_package.outputs.working_dir }}/veracode-artifacts/*"
+        if-no-files-found: error
